@@ -117,3 +117,11 @@ def build_tools(router: WebRouter, provider: str | None = None) -> list:
         }
 
     return [web_search, web_extract]
+
+
+# --- Partner tweak sketch (not wired into build_tools by default) ---
+# To add another tool: define an @ai.tool like web_search / web_extract above,
+# append it to the list returned by build_tools, restart uvicorn.
+# To pin the router default / provider_config, change WebRouter(...) in
+# webapp/main.py — see PARTNER_TWEAK.md.
+

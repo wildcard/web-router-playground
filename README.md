@@ -69,4 +69,4 @@ uv run python demo_terminal.py
 uv run uvicorn webapp.main:app --host 127.0.0.1 --port 8811
 ```
 
-See [`examples/vercel-ai-sdk/README.md`](examples/vercel-ai-sdk/README.md) for partner UX detail and the 30-second walkthrough.
+See [`examples/vercel-ai-sdk/README.md`](examples/vercel-ai-sdk/README.md) for partner UX detail, the 30-second walkthrough, and [`PARTNER_TWEAK.md`](examples/vercel-ai-sdk/PARTNER_TWEAK.md) (add a tool / configure the router).

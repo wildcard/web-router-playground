@@ -66,6 +66,16 @@ agent = Agent(
 
 Same agent. Swap the tools list. Providers stay behind adapters.
 
+## Tweak the playground (add a tool / configure the router)
+
+Partners who clone this tree (or edit on a shell-enabled invite VM) can change the integration — not only chat.
+
+See **[`PARTNER_TWEAK.md`](PARTNER_TWEAK.md)** for:
+
+- Pinning `WebRouter(provider=…, provider_config=…)` in `webapp/main.py`
+- Adding another `@ai.tool` in `demo/tools.py` `build_tools`
+- Local restart loop after edits
+
 ## Partner 30-second walkthrough
 
 1. Open the invite link → land on the dark chat UI (**web-router × Vercel AI SDK**).
