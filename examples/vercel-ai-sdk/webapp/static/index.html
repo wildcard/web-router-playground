@@ -369,6 +369,8 @@ const SUGGESTIONS = [
 ];
 
 let emptyEl = null;
+/** Full turn history for the agent (user + assistant text). Tool cards are UI-only. */
+const chatHistory = [];
 
 function renderEmpty() {
   if (emptyEl) return;
@@ -495,6 +497,7 @@ form.addEventListener('submit', async (e) => {
   sendBtn.disabled = true;
   clearEmpty();
 
+  chatHistory.push({ role: 'user', content: message });
   addMessage('user', message);
   const assistantBody = addMessage('assistant', '');
   let textBuf = '';
@@ -503,7 +506,11 @@ form.addEventListener('submit', async (e) => {
   const res = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, provider: providerSel.value }),
+    body: JSON.stringify({
+      message,
+      messages: chatHistory,
+      provider: providerSel.value,
+    }),
   });
 
   const reader = res.body.getReader();
@@ -558,6 +565,15 @@ form.addEventListener('submit', async (e) => {
         assistantBody.appendChild(p);
       }
     }
+  }
+  if (textBuf.trim()) {
+    chatHistory.push({ role: 'assistant', content: textBuf.trim() });
+  } else {
+    // Keep history honest if the model produced no text (e.g. error-only turn).
+    chatHistory.push({
+      role: 'assistant',
+      content: '(no assistant text this turn — try again or rephrase)',
+    });
   }
   sendBtn.disabled = false;
   input.focus();

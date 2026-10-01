@@ -10,6 +10,7 @@ This directory is the first playground under the [`web-router-playground`](../..
 - Provider chips (nimble / tavily / exa / openai) — green when a key is available for this session
 - Chat composer: ask anything that needs live web search, URL extract, or both
 - Streaming tool cards: `web_search` / `web_extract` fire live; each card shows which provider **served** the call
+- Multi-turn chat: the UI sends full `messages[]` history each turn (follow-ups keep context)
 
 Same story as the terminal demo (`demo_terminal.py`) — multi-provider search/extract, then an agent that uses those tools end-to-end.
 

@@ -40,8 +40,16 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 router = WebRouter()
 
 
+class ChatTurn(BaseModel):
+    role: str  # "user" | "assistant" | "system"
+    content: str
+
+
 class ChatRequest(BaseModel):
-    message: str
+    """Prefer `messages` (full history). `message` alone is a cold single turn."""
+
+    message: str = ""
+    messages: list[ChatTurn] = Field(default_factory=list)
     provider: str = "auto"
 
 
@@ -93,7 +101,40 @@ def sse(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data)}\n\n"
 
 
-async def stream_agent_turn(message: str, provider: str) -> AsyncIterator[str]:
+SYSTEM_PROMPT = (
+    "You are a demo agent for WebRouter typed web-context tools "
+    "(web_search + web_extract) on the Vercel AI SDK for Python. "
+    "When the user asks about the live web, prices, news, timelines, or "
+    "challenges your answer, call the tools again — do not ask them to go "
+    "fetch sources. Prefer web_search then web_extract on 2–3 promising URLs "
+    "for multi-part or timeline questions. Keep answers concise and cite URLs."
+)
+
+
+def build_messages(req: ChatRequest) -> list:
+    """Build ai messages from full history, or fall back to a single user turn."""
+    out: list = [ai.system_message(SYSTEM_PROMPT)]
+    if req.messages:
+        for turn in req.messages:
+            role = (turn.role or "").lower().strip()
+            content = (turn.content or "").strip()
+            if not content:
+                continue
+            if role == "assistant":
+                out.append(ai.assistant_message(content))
+            elif role == "system":
+                # Ignore client system turns; host owns SYSTEM_PROMPT.
+                continue
+            else:
+                out.append(ai.user_message(content))
+        return out
+    if req.message.strip():
+        out.append(ai.user_message(req.message.strip()))
+        return out
+    return out
+
+
+async def stream_agent_turn(req: ChatRequest) -> AsyncIterator[str]:
     if not has_openai_key():
         yield sse(
             "error",
@@ -106,10 +147,14 @@ async def stream_agent_turn(message: str, provider: str) -> AsyncIterator[str]:
         )
         return
 
-    tools = build_tools(router, provider=provider)
+    messages = build_messages(req)
+    if len(messages) < 2:
+        yield sse("error", {"message": "Send a non-empty message (or messages history)."})
+        return
+
+    tools = build_tools(router, provider=req.provider)
     agent = ai.Agent(tools=tools)
     model = ai.get_model("openai:gpt-4o-mini")
-    messages = [ai.user_message(message)]
 
     try:
         async with agent.run(model, messages) as stream:
@@ -144,6 +189,6 @@ async def stream_agent_turn(message: str, provider: str) -> AsyncIterator[str]:
 @app.post("/api/chat")
 async def chat(req: ChatRequest) -> StreamingResponse:
     return StreamingResponse(
-        stream_agent_turn(req.message, req.provider),
+        stream_agent_turn(req),
         media_type="text/event-stream",
     )

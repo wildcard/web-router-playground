@@ -92,9 +92,15 @@ def build_tools(router: WebRouter, provider: str | None = None) -> list:
     """Return `[web_search, web_extract]` bound to a provider (or 'auto')."""
 
     @ai.tool
-    async def web_search(query: str, max_results: int = 5) -> dict:
-        """Search the web via web-router (multi-provider: nimble, tavily, exa, auto)."""
-        outcome = await asyncio.to_thread(run_search, router, query, provider, max_results)
+    async def web_search(query: str) -> dict:
+        """Search the web via web-router (multi-provider: nimble, tavily, exa, auto).
+
+        Always fetches several results (fixed floor of 5). Do not ask the user to
+        fetch links themselves — call this tool (and web_extract) again on pushback.
+        """
+        # max_results is intentionally not a model-visible arg (models were
+        # choosing 1). Floor stays 5 server-side.
+        outcome = await asyncio.to_thread(run_search, router, query, provider, 5)
         return {
             "provider": outcome.provider,
             "query": outcome.query,
