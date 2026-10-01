@@ -120,14 +120,17 @@ The live code editing flow follows these steps:
 
 ### Screenshots
 
-![Cursor Remote-SSH Connection](guide-shots/s6-remote-open-proof.png)
+![Authenticated Playground with BYOK](guide-shots/01-authed-playground-byok.png)
+*Authenticated Web playground with Session keys (BYOK) open and Harness available*
+
+![Cursor Remote-SSH Connection](guide-shots/02-cursor-remote-connected.png)
 *Cursor Remote-SSH connected to the sandbox, workspace open in `examples/vercel-ai-sdk`*
 
-![IDE Editing Session](guide-shots/s6-cursor-remote-1.png)
-*Active code editing in the IDE*
+![IDE Editing Session](guide-shots/03-ide-file-edit.png)
+*Active code editing in the IDE during partner edit*
 
-![Live Changes Deployed](guide-shots/s6-tweak-live-after.png)
-*Playground showing live changes after remount*
+![Live Changes Deployed](guide-shots/04-live-after-remount.png)
+*Playground showing live changes after remount (header shows "· S6 partner live")*
 
 ---
 
