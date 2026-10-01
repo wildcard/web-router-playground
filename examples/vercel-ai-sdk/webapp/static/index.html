@@ -86,7 +86,7 @@
   }
   .keys-hint.warn { color: var(--warn); }
 
-  #keys-panel {
+  #keys-panel, #harness-panel {
     display: none;
     border: 1px solid var(--border);
     border-radius: 10px;
@@ -94,13 +94,13 @@
     padding: 14px 14px 12px;
     margin: 8px 0 4px;
   }
-  #keys-panel.open { display: block; }
-  #keys-panel h3 {
+  #keys-panel.open, #harness-panel.open { display: block; }
+  #keys-panel h3, #harness-panel h3 {
     margin: 0 0 6px;
     font-size: 13px;
     font-weight: 600;
   }
-  #keys-panel p {
+  #keys-panel p, #harness-panel p {
     margin: 0 0 12px;
     font-size: 12px;
     color: var(--zinc-dim);
@@ -153,6 +153,53 @@
   }
   .keys-actions button:disabled { opacity: 0.4; cursor: default; }
   #keys-msg { font-size: 12px; color: var(--zinc-dim); }
+
+  #harness-panel textarea {
+    width: 100%;
+    min-height: 160px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--white);
+    padding: 10px 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.5;
+    outline: none;
+    resize: vertical;
+  }
+  #harness-panel textarea:focus { border-color: var(--zinc-dim); }
+  .harness-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+  .harness-actions button {
+    background: var(--white);
+    color: var(--bg);
+    border: none;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .harness-actions button.secondary {
+    background: var(--panel);
+    color: var(--zinc);
+    border: 1px solid var(--border);
+  }
+  .harness-actions button:disabled { opacity: 0.4; cursor: default; }
+  #harness-msg { font-size: 12px; color: var(--zinc-dim); }
+  .harness-status { 
+    font-family: var(--mono); 
+    font-size: 10px; 
+    color: var(--accent); 
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
 
   #log {
     flex: 1;
@@ -294,6 +341,7 @@
     </div>
     <div class="header-actions">
       <button type="button" class="ghost-btn" id="keys-toggle" title="Paste your own API keys for this session">Session keys</button>
+      <button type="button" class="ghost-btn" id="harness-toggle" title="View and edit harness settings (system prompt, search config)">Harness</button>
       <select id="provider" title="Preferred search/extract provider">
         <option value="auto">auto</option>
         <option value="nimble">nimble</option>
@@ -325,6 +373,32 @@
     </div>
   </div>
 
+  <div id="harness-panel" aria-live="polite">
+    <h3>Harness settings</h3>
+    <p>
+      <strong>Host/demo only</strong> — not Nimble WebRouter product.
+      Defaults from Rig <code style="font-family:var(--mono);font-size:11px">DEFAULTS.md</code> (research-backed).
+      Changes persist in sessionStorage (refresh keeps your tweaks).
+    </p>
+    <label style="display:block;margin-bottom:12px;font-family:var(--mono);font-size:10px;color:var(--zinc-dim);text-transform:uppercase;letter-spacing:0.04em;">
+      System prompt <span id="harness-status" class="harness-status">default</span>
+      <textarea id="harness-prompt" spellcheck="false"></textarea>
+    </label>
+    <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-family:var(--mono);font-size:10px;color:var(--zinc-dim);text-transform:uppercase;letter-spacing:0.04em;">
+      <span>max_results (host preset)</span>
+      <select id="harness-maxresults" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--white);padding:6px 10px;font-family:var(--mono);font-size:11px;">
+        <option value="5">5 (default Q&A)</option>
+        <option value="8">8 (broad research)</option>
+        <option value="10">10 (timeline/compare)</option>
+      </select>
+    </label>
+    <div class="harness-actions">
+      <button type="button" id="harness-save">Save</button>
+      <button type="button" id="harness-reset" class="secondary">Reset to default</button>
+      <span id="harness-msg"></span>
+    </div>
+  </div>
+
   <div id="log"></div>
 
   <div id="composer">
@@ -353,6 +427,15 @@ const keysToggle = document.getElementById('keys-toggle');
 const keysSave = document.getElementById('keys-save');
 const keysMsg = document.getElementById('keys-msg');
 
+const harnessPanel = document.getElementById('harness-panel');
+const harnessToggle = document.getElementById('harness-toggle');
+const harnessPrompt = document.getElementById('harness-prompt');
+const harnessMaxResults = document.getElementById('harness-maxresults');
+const harnessStatus = document.getElementById('harness-status');
+const harnessSave = document.getElementById('harness-save');
+const harnessReset = document.getElementById('harness-reset');
+const harnessMsg = document.getElementById('harness-msg');
+
 const SUGGESTIONS = [
   {
     label: 'Search + extract',
@@ -371,6 +454,13 @@ const SUGGESTIONS = [
 let emptyEl = null;
 /** Full turn history for the agent (user + assistant text). Tool cards are UI-only. */
 const chatHistory = [];
+
+/** Session ID for harness settings persistence */
+let sessionId = sessionStorage.getItem('sessionId');
+if (!sessionId) {
+  sessionId = crypto.randomUUID();
+  sessionStorage.setItem('sessionId', sessionId);
+}
 
 function renderEmpty() {
   if (emptyEl) return;
@@ -436,6 +526,9 @@ async function loadProviders() {
 
 keysToggle.addEventListener('click', () => {
   keysPanel.classList.toggle('open');
+  if (harnessPanel.classList.contains('open')) {
+    harnessPanel.classList.remove('open');
+  }
 });
 
 keysSave.addEventListener('click', async () => {
@@ -462,6 +555,91 @@ keysSave.addEventListener('click', async () => {
     keysMsg.textContent = 'Could not apply keys: ' + err;
   }
   keysSave.disabled = false;
+});
+
+harnessToggle.addEventListener('click', () => {
+  harnessPanel.classList.toggle('open');
+  if (harnessPanel.classList.contains('open')) {
+    loadHarnessSettings();
+  }
+  if (keysPanel.classList.contains('open')) {
+    keysPanel.classList.remove('open');
+  }
+});
+
+async function loadHarnessSettings() {
+  try {
+    const res = await fetch(`/api/harness?session_id=${sessionId}`);
+    const data = await res.json();
+    
+    // Load system prompt
+    const prompt = data.effective_prompt || '';
+    harnessPrompt.value = prompt;
+    
+    // Update status badge
+    if (data.is_default) {
+      harnessStatus.textContent = 'default';
+      harnessStatus.style.color = 'var(--accent)';
+    } else if (data.is_custom) {
+      harnessStatus.textContent = 'custom';
+      harnessStatus.style.color = 'var(--warn)';
+    } else if (data.is_cleared) {
+      harnessStatus.textContent = 'cleared (using default)';
+      harnessStatus.style.color = 'var(--zinc-dim)';
+    }
+    
+    // Load max_results
+    harnessMaxResults.value = data.max_results || 5;
+    
+    // Store default for reset
+    harnessPrompt.dataset.default = data.default_prompt || '';
+  } catch (err) {
+    harnessMsg.textContent = 'Could not load settings: ' + err;
+  }
+}
+
+harnessSave.addEventListener('click', async () => {
+  harnessSave.disabled = true;
+  harnessMsg.textContent = 'Saving…';
+  try {
+    const res = await fetch('/api/harness', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        session_id: sessionId,
+        prompt: harnessPrompt.value,
+        max_results: parseInt(harnessMaxResults.value),
+      }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      harnessMsg.textContent = 'Saved to sessionStorage (persists on refresh).';
+      await loadHarnessSettings();
+    } else {
+      harnessMsg.textContent = 'Error: ' + (data.error || 'unknown');
+    }
+  } catch (err) {
+    harnessMsg.textContent = 'Could not save: ' + err;
+  }
+  harnessSave.disabled = false;
+});
+
+harnessReset.addEventListener('click', async () => {
+  harnessReset.disabled = true;
+  harnessMsg.textContent = 'Resetting…';
+  try {
+    const res = await fetch(`/api/harness/reset?session_id=${sessionId}`, {
+      method: 'POST',
+    });
+    const data = await res.json();
+    if (data.ok) {
+      harnessMsg.textContent = 'Reset to Rig DEFAULTS.md built-in.';
+      await loadHarnessSettings();
+    }
+  } catch (err) {
+    harnessMsg.textContent = 'Could not reset: ' + err;
+  }
+  harnessReset.disabled = false;
 });
 
 loadProviders();
@@ -503,6 +681,18 @@ form.addEventListener('submit', async (e) => {
   let textBuf = '';
   const toolCards = {};
 
+  // Get current max_results from session storage (if harness was customized)
+  let maxResults = null;
+  try {
+    const harnessRes = await fetch(`/api/harness?session_id=${sessionId}`);
+    const harnessData = await harnessRes.json();
+    if (harnessData.max_results !== harnessData.max_results_default) {
+      maxResults = harnessData.max_results;
+    }
+  } catch (err) {
+    // Ignore - will use server default
+  }
+
   const res = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -510,6 +700,8 @@ form.addEventListener('submit', async (e) => {
       message,
       messages: chatHistory,
       provider: providerSel.value,
+      session_id: sessionId,
+      max_results: maxResults,
     }),
   });
 

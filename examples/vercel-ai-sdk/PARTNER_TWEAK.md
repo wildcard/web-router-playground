@@ -8,12 +8,15 @@ monorepo (or edit on a VM with shell access).
 Claim-safe: Layer-1 typed web-context; demo tools are search + extract;
 preview / invite-gated; install via vendored wheel (no public PyPI live path).
 
+**Harness guidance:** System prompt, `max_results` floor, history policy, and query formulation follow research-backed defaults from Rig [`DEFAULTS.md`](../../docs/rig/DEFAULTS.md) and [`STANDING.md`](../../docs/rig/STANDING.md). These are **host/demo configuration only** — not Nimble WebRouter product capabilities or claims.
+
 ## Where the integration lives
 
 | File | Role |
 |---|---|
 | [`demo/tools.py`](demo/tools.py) | `build_tools(WebRouter())` → `[web_search, web_extract]` as `@ai.tool` |
-| [`webapp/main.py`](webapp/main.py) | FastAPI + SSE chat; `router = WebRouter()` singleton |
+| [`demo/harness_defaults.py`](demo/harness_defaults.py) | Default system prompt + `max_results` from Rig DEFAULTS.md §4 |
+| [`webapp/main.py`](webapp/main.py) | FastAPI + SSE chat; `router = WebRouter()` singleton; harness API |
 | [`demo/env.py`](demo/env.py) | Keys: BYOK Session keys / `.env`, or host process-env (invite) |
 
 Host pattern stays the same: wrap WebRouter behind ordinary AI SDK tools.
@@ -27,6 +30,23 @@ No fork of `ai`, no fork of `web_router`.
 | **(b) Nimble-hosted invite** | Host ops | Process env on the private VM (`override=False` → host wins) |
 
 Never put real keys in git. Invite keys are session-scoped for that private host.
+
+## Harness controls (UI + code)
+
+The web UI includes a **Harness** button that lets you view/edit demo settings without changing code:
+
+| Setting | UI control | Default | Reset behavior |
+|---------|-----------|---------|----------------|
+| **System prompt** | Editable textarea | Rig DEFAULTS.md §4 (copy-pasteable block) | Restores built-in default — **never** empty system (Rig §7: empty recreates bare-agent failure) |
+| **max_results** | Dropdown (5 / 8 / 10) | **5** (general Q&A, news, prices) | Restores 5 |
+
+Changes persist in **sessionStorage** (survive refresh; cleared when you close the tab). This is in-memory only — not written to disk or git.
+
+**When to edit in UI vs code:**
+- **UI:** Quick tweaks for a demo session; testing alternate prompts without restarting uvicorn.
+- **Code:** Change the built-in default in `demo/harness_defaults.py` (e.g. when Rig ships updated guidance or you fork for your own harness SoT).
+
+**Tool note:** `max_results` is **hidden from the model** (Rig STANDING P1: agents freestyle poorly; host pins budgets). The model-facing `web_search(query: str)` has no `max_results` arg. Host preset is enforced with a floor ≥5 server-side in `demo/tools.py` `run_search`.
 
 ## Configure the router
 

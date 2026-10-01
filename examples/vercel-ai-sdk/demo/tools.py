@@ -4,6 +4,9 @@ This is the entire integration surface: two `@ai.tool` functions that call
 `WebRouter.search` / `WebRouter.extract` on a background thread. No fork of
 `ai`, no fork of `web_router` — just the adapter pattern from
 AI_SDK_PYTHON_WEB_ROUTER_GUIDE.md.
+
+Harness defaults (max_results floor, system prompt) from Rig DEFAULTS.md.
+Host/harness only — not Nimble WebRouter product claims.
 """
 
 from __future__ import annotations
@@ -13,6 +16,8 @@ from dataclasses import dataclass
 
 import ai
 from web_router import WebRouter
+
+from .harness_defaults import DEFAULT_MAX_RESULTS
 
 PREVIEW_CHARS = 1500
 
@@ -43,11 +48,17 @@ class ExtractOutcome:
     elapsed_ms: int
 
 
-def run_search(router: WebRouter, query: str, provider: str | None, max_results: int = 5) -> SearchOutcome:
+def run_search(
+    router: WebRouter, query: str, provider: str | None, max_results: int | None = None
+) -> SearchOutcome:
     import time
 
     started = time.perf_counter()
-    kwargs = {"max_results": max_results}
+    # Apply default if not specified, and ensure floor is respected (Rig §2)
+    actual_max = max_results if max_results is not None else DEFAULT_MAX_RESULTS
+    actual_max = max(actual_max, DEFAULT_MAX_RESULTS)  # Floor enforcement
+    
+    kwargs = {"max_results": actual_max}
     if provider and provider != "auto":
         kwargs["provider"] = provider
     response = router.search(query, **kwargs)
@@ -88,19 +99,26 @@ def run_extract(router: WebRouter, url: str, provider: str | None, fmt: str = "m
     )
 
 
-def build_tools(router: WebRouter, provider: str | None = None) -> list:
-    """Return `[web_search, web_extract]` bound to a provider (or 'auto')."""
+def build_tools(router: WebRouter, provider: str | None = None, max_results: int | None = None) -> list:
+    """Return `[web_search, web_extract]` bound to a provider (or 'auto') and optional max_results.
+    
+    Args:
+        router: WebRouter instance
+        provider: Provider hint ('auto', 'nimble', 'tavily', 'exa')
+        max_results: Host preset for search result count (5/8/10). Defaults to 5 if None.
+                     Hidden from model; floor always ≥5. Rig DEFAULTS.md §2.
+    """
 
     @ai.tool
     async def web_search(query: str) -> dict:
         """Search the web via web-router (multi-provider: nimble, tavily, exa, auto).
 
-        Always fetches several results (fixed floor of 5). Do not ask the user to
+        Always fetches several results (host floor of 5). Do not ask the user to
         fetch links themselves — call this tool (and web_extract) again on pushback.
         """
-        # max_results is intentionally not a model-visible arg (models were
-        # choosing 1). Floor stays 5 server-side.
-        outcome = await asyncio.to_thread(run_search, router, query, provider, 5)
+        # max_results is intentionally not a model-visible arg (Rig STANDING P1:
+        # models freestyle poorly; host pins budget). Floor ≥5 server-side.
+        outcome = await asyncio.to_thread(run_search, router, query, provider, max_results)
         return {
             "provider": outcome.provider,
             "query": outcome.query,

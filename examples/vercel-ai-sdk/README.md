@@ -4,15 +4,20 @@
 
 This directory is the first playground under the [`web-router-playground`](../../) monorepo. The invite-gated Exe sandbox runs **this tree** (cwd = here), not a loose zip fork.
 
+**Harness defaults:** System prompt, `max_results` floor (≥5), and agent behavior follow research-backed guidance from Rig [`DEFAULTS.md`](../../docs/rig/DEFAULTS.md) and [`STANDING.md`](../../docs/rig/STANDING.md). These are **host/demo configuration** — not Nimble WebRouter product claims.
+
 ## What you see in the web UI
 
 - Branding: **web-router × Vercel AI SDK (Python)**
 - Provider chips (nimble / tavily / exa / openai) — green when a key is available for this session
+- **Harness** control: view/edit system prompt, tune `max_results` preset (5 default / 8–10 for research). Persists in sessionStorage; "Reset" restores Rig built-in defaults (never empty system — Rig §7).
 - Chat composer: ask anything that needs live web search, URL extract, or both
 - Streaming tool cards: `web_search` / `web_extract` fire live; each card shows which provider **served** the call
 - Multi-turn chat: the UI sends full `messages[]` history each turn (follow-ups keep context)
 
 Same story as the terminal demo (`demo_terminal.py`) — multi-provider search/extract, then an agent that uses those tools end-to-end.
+
+**Known P1 (not yet implemented):** Tool call + tool result messages are currently UI-only cards. Rig recommends persisting them in `messages[]` for richer context on follow-ups. Acceptable for short demos when assistant text cites URLs; upgrade path tracked but not blocking.
 
 ## Keys — (a) BYOK and (b) Nimble-hosted session
 
