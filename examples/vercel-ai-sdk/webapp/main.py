@@ -2,7 +2,8 @@
 
 One route renders the UI, one route streams an agent turn as Server-Sent
 Events so the browser can show tool calls the moment they start, not after
-the whole response finishes.
+the whole response finishes. Session-keys endpoint lets partners paste BYOK
+into process env for this run (never written to disk / git).
 """
 
 from __future__ import annotations
@@ -16,12 +17,18 @@ import ai
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from web_router import WebRouter
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from demo.env import configured_providers, has_openai_key, load_env
+from demo.env import (
+    apply_session_keys,
+    configured_providers,
+    configured_status,
+    has_openai_key,
+    load_env,
+)
 from demo.tools import build_tools
 
 load_env()
@@ -38,6 +45,15 @@ class ChatRequest(BaseModel):
     provider: str = "auto"
 
 
+class SessionKeysRequest(BaseModel):
+    """BYOK paste — empty fields ignored; does not clear host-injected keys."""
+
+    NIMBLE_API_KEY: str = Field(default="")
+    TAVILY_API_KEY: str = Field(default="")
+    EXA_API_KEY: str = Field(default="")
+    OPENAI_API_KEY: str = Field(default="")
+
+
 @app.get("/")
 def index() -> FileResponse:
     return FileResponse(STATIC_DIR / "index.html")
@@ -48,6 +64,28 @@ def providers() -> dict:
     return {
         "search_extract": configured_providers(),
         "openai": has_openai_key(),
+        "status": configured_status(),
+    }
+
+
+@app.post("/api/session-keys")
+def session_keys(req: SessionKeysRequest) -> dict:
+    """Apply partner keys to process env for this uvicorn process only.
+
+    Mode (a) BYOK. Mode (b) Nimble-hosted keys should be injected by the host
+    into process env before start; this endpoint never writes `.env` or logs
+    values.
+    """
+    status = apply_session_keys(req.model_dump())
+    return {
+        "ok": True,
+        "search_extract": {
+            "nimble": status["nimble"],
+            "tavily": status["tavily"],
+            "exa": status["exa"],
+        },
+        "openai": status["openai"],
+        "status": status,
     }
 
 
@@ -57,7 +95,15 @@ def sse(event: str, data: dict) -> str:
 
 async def stream_agent_turn(message: str, provider: str) -> AsyncIterator[str]:
     if not has_openai_key():
-        yield sse("error", {"message": "OPENAI_API_KEY is not configured on the server."})
+        yield sse(
+            "error",
+            {
+                "message": (
+                    "OPENAI_API_KEY is not configured. Paste keys via Session keys "
+                    "(BYOK) or ask the host to inject invite-session env."
+                )
+            },
+        )
         return
 
     tools = build_tools(router, provider=provider)

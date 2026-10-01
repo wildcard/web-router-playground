@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>web-router × AI SDK</title>
+<title>web-router × Vercel AI SDK — search &amp; extract live</title>
 <style>
   :root {
     --bg: #000000;
@@ -14,6 +14,8 @@
     --zinc-dim: #71717a;
     --white: #fafafa;
     --accent: #22c55e;
+    --warn: #fbbf24;
+    --danger: #f87171;
     --mono: "SF Mono", "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
     --sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Helvetica, Arial, sans-serif;
   }
@@ -33,18 +35,21 @@
     padding: 0 24px;
   }
   header {
-    padding: 28px 0 20px;
+    padding: 28px 0 16px;
     border-bottom: 1px solid var(--border-soft);
     display: flex;
-    align-items: baseline;
+    align-items: flex-start;
     justify-content: space-between;
+    gap: 16px;
   }
-  .brand { display: flex; align-items: baseline; gap: 10px; }
+  .brand { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
   .brand .name { font-weight: 600; font-size: 15px; letter-spacing: -0.01em; }
   .brand .sep { color: var(--zinc-dim); font-size: 13px; }
   .brand .sdk { color: var(--zinc); font-size: 15px; }
-  .tagline { color: var(--zinc-dim); font-size: 12px; margin-top: 4px; }
-  select {
+  .tagline { color: var(--zinc-dim); font-size: 12px; margin-top: 6px; line-height: 1.45; max-width: 520px; }
+  .tagline strong { color: var(--zinc); font-weight: 500; }
+  .header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  select, .ghost-btn {
     background: var(--panel);
     color: var(--white);
     border: 1px solid var(--border);
@@ -53,14 +58,17 @@
     font-family: var(--mono);
     font-size: 12px;
     outline: none;
+    cursor: pointer;
   }
-  select:hover { border-color: var(--zinc-dim); }
+  select:hover, .ghost-btn:hover { border-color: var(--zinc-dim); }
+  .ghost-btn { color: var(--zinc); }
 
   #providers {
     display: flex;
     gap: 8px;
-    padding: 12px 0;
+    padding: 12px 0 4px;
     flex-wrap: wrap;
+    align-items: center;
   }
   .chip {
     font-family: var(--mono);
@@ -71,6 +79,80 @@
     color: var(--zinc-dim);
   }
   .chip.on { color: var(--accent); border-color: rgba(34,197,94,0.35); background: rgba(34,197,94,0.06); }
+  .keys-hint {
+    font-size: 11px;
+    color: var(--zinc-dim);
+    margin-left: 4px;
+  }
+  .keys-hint.warn { color: var(--warn); }
+
+  #keys-panel {
+    display: none;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--panel);
+    padding: 14px 14px 12px;
+    margin: 8px 0 4px;
+  }
+  #keys-panel.open { display: block; }
+  #keys-panel h3 {
+    margin: 0 0 6px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  #keys-panel p {
+    margin: 0 0 12px;
+    font-size: 12px;
+    color: var(--zinc-dim);
+    line-height: 1.45;
+  }
+  .keys-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  @media (max-width: 640px) {
+    .keys-grid { grid-template-columns: 1fr; }
+  }
+  .keys-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--zinc-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .keys-grid input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--white);
+    padding: 8px 10px;
+    font-family: var(--mono);
+    font-size: 12px;
+    outline: none;
+  }
+  .keys-grid input:focus { border-color: var(--zinc-dim); }
+  .keys-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .keys-actions button {
+    background: var(--white);
+    color: var(--bg);
+    border: none;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .keys-actions button:disabled { opacity: 0.4; cursor: default; }
+  #keys-msg { font-size: 12px; color: var(--zinc-dim); }
 
   #log {
     flex: 1;
@@ -91,6 +173,46 @@
   .msg .body { flex: 1; min-width: 0; line-height: 1.55; font-size: 14.5px; }
   .msg.user .body { color: var(--white); }
   .msg.assistant .body { color: var(--white); }
+
+  .empty {
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    padding: 20px 18px;
+    margin-top: 8px;
+  }
+  .empty h2 {
+    margin: 0 0 6px;
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .empty p {
+    margin: 0 0 14px;
+    color: var(--zinc-dim);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .suggestions { display: flex; flex-direction: column; gap: 8px; }
+  .suggestions button {
+    text-align: left;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--white);
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.4;
+    cursor: pointer;
+  }
+  .suggestions button:hover { border-color: var(--zinc-dim); }
+  .suggestions button span {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
 
   .tool-card {
     border: 1px solid var(--border);
@@ -137,7 +259,7 @@
     outline: none;
   }
   #composer input:focus { border-color: var(--zinc-dim); }
-  #composer button {
+  #composer button[type="submit"] {
     background: var(--white);
     color: var(--bg);
     border: none;
@@ -147,8 +269,8 @@
     font-size: 14px;
     cursor: pointer;
   }
-  #composer button:disabled { opacity: 0.4; cursor: default; }
-  #composer .hint { color: var(--zinc-dim); font-size: 11px; margin-top: 8px; }
+  #composer button[type="submit"]:disabled { opacity: 0.4; cursor: default; }
+  #composer .hint { color: var(--zinc-dim); font-size: 11px; margin-top: 8px; line-height: 1.4; }
 
   ::-webkit-scrollbar { width: 8px; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }
@@ -163,27 +285,59 @@
         <span class="sep">×</span>
         <span class="sdk">Vercel AI SDK (Python)</span>
       </div>
-      <div class="tagline">one integration, every search &amp; extract provider</div>
+      <div class="tagline">
+        <strong>Live search + extract</strong> via WebRouter typed web-context —
+        same tools an agent gets through <code style="font-family:var(--mono);font-size:11px;color:var(--zinc)">@ai.tool</code> /
+        <code style="font-family:var(--mono);font-size:11px;color:var(--zinc)">build_tools(WebRouter())</code>.
+        Preview playground · invite session.
+      </div>
     </div>
-    <select id="provider">
-      <option value="auto">auto</option>
-      <option value="nimble">nimble</option>
-      <option value="tavily">tavily</option>
-      <option value="exa">exa</option>
-    </select>
+    <div class="header-actions">
+      <button type="button" class="ghost-btn" id="keys-toggle" title="Paste your own API keys for this session">Session keys</button>
+      <select id="provider" title="Preferred search/extract provider">
+        <option value="auto">auto</option>
+        <option value="nimble">nimble</option>
+        <option value="tavily">tavily</option>
+        <option value="exa">exa</option>
+      </select>
+    </div>
   </header>
 
   <div id="providers"></div>
+
+  <div id="keys-panel" aria-live="polite">
+    <h3>Session keys (BYOK)</h3>
+    <p>
+      Paste keys for <em>this process only</em> — nothing is written to disk or git.
+      Empty fields leave existing values alone (so Nimble-hosted invite env is not wiped).
+      Prefer a local <code style="font-family:var(--mono);font-size:11px">.env</code> from
+      <code style="font-family:var(--mono);font-size:11px">.env.example</code> when running from clone.
+    </p>
+    <div class="keys-grid">
+      <label>NIMBLE_API_KEY<input id="k-nimble" type="password" autocomplete="off" spellcheck="false" /></label>
+      <label>OPENAI_API_KEY<input id="k-openai" type="password" autocomplete="off" spellcheck="false" /></label>
+      <label>TAVILY_API_KEY<input id="k-tavily" type="password" autocomplete="off" spellcheck="false" /></label>
+      <label>EXA_API_KEY<input id="k-exa" type="password" autocomplete="off" spellcheck="false" /></label>
+    </div>
+    <div class="keys-actions">
+      <button type="button" id="keys-save">Apply to session</button>
+      <span id="keys-msg"></span>
+    </div>
+  </div>
 
   <div id="log"></div>
 
   <div id="composer">
     <form id="form">
       <input id="input" type="text" autocomplete="off"
-        placeholder="Search for something, extract a URL, or ask a question that needs both..." />
+        placeholder="Search the web, extract a URL, or ask something that needs both..." />
       <button id="send" type="submit">Send</button>
     </form>
-    <div class="hint">Tool calls stream live below each answer — provider badges show which backend actually served the request.</div>
+    <div class="hint">
+      Tool calls stream live — <code style="font-family:var(--mono)">web_search</code> /
+      <code style="font-family:var(--mono)">web_extract</code> cards show which provider served the request.
+      This is the monorepo playground example, not a blank shell.
+    </div>
   </div>
 </div>
 
@@ -194,12 +348,63 @@ const input = document.getElementById('input');
 const sendBtn = document.getElementById('send');
 const providerSel = document.getElementById('provider');
 const providersEl = document.getElementById('providers');
+const keysPanel = document.getElementById('keys-panel');
+const keysToggle = document.getElementById('keys-toggle');
+const keysSave = document.getElementById('keys-save');
+const keysMsg = document.getElementById('keys-msg');
 
-async function loadProviders() {
-  const res = await fetch('/api/providers');
-  const data = await res.json();
+const SUGGESTIONS = [
+  {
+    label: 'Search + extract',
+    text: 'Search for retrieval-augmented generation, then extract the top Wikipedia result and summarize in two sentences.',
+  },
+  {
+    label: 'Web search',
+    text: 'Search the web for the Nimble web-router Python package and list the top three results with URLs.',
+  },
+  {
+    label: 'URL extract',
+    text: 'Extract https://en.wikipedia.org/wiki/Retrieval-augmented_generation as markdown and give a three-bullet overview.',
+  },
+];
+
+let emptyEl = null;
+
+function renderEmpty() {
+  if (emptyEl) return;
+  emptyEl = document.createElement('div');
+  emptyEl.className = 'empty';
+  emptyEl.innerHTML = `
+    <h2>Try live WebRouter tools</h2>
+    <p>Vercel AI SDK agent + WebRouter <strong style="color:var(--zinc);font-weight:500">search</strong> and
+    <strong style="color:var(--zinc);font-weight:500">extract</strong>. Pick a starter or type your own.</p>
+    <div class="suggestions"></div>
+  `;
+  const box = emptyEl.querySelector('.suggestions');
+  for (const s of SUGGESTIONS) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.innerHTML = `<span>${s.label}</span>${s.text}`;
+    btn.addEventListener('click', () => {
+      input.value = s.text;
+      input.focus();
+      form.requestSubmit();
+    });
+    box.appendChild(btn);
+  }
+  log.appendChild(emptyEl);
+}
+
+function clearEmpty() {
+  if (emptyEl) {
+    emptyEl.remove();
+    emptyEl = null;
+  }
+}
+
+function updateProvidersUI(data) {
   providersEl.innerHTML = '';
-  for (const [name, ok] of Object.entries(data.search_extract)) {
+  for (const [name, ok] of Object.entries(data.search_extract || {})) {
     const chip = document.createElement('span');
     chip.className = 'chip' + (ok ? ' on' : '');
     chip.textContent = name;
@@ -209,8 +414,56 @@ async function loadProviders() {
   chip.className = 'chip' + (data.openai ? ' on' : '');
   chip.textContent = 'openai (agent model)';
   providersEl.appendChild(chip);
+
+  const anySearch = Object.values(data.search_extract || {}).some(Boolean);
+  const hint = document.createElement('span');
+  hint.className = 'keys-hint' + ((data.openai && anySearch) ? '' : ' warn');
+  if (data.openai && anySearch) {
+    hint.textContent = 'keys ready for this session';
+  } else {
+    hint.textContent = 'missing keys — use Session keys (BYOK) or ask host for invite env';
+  }
+  providersEl.appendChild(hint);
 }
+
+async function loadProviders() {
+  const res = await fetch('/api/providers');
+  const data = await res.json();
+  updateProvidersUI(data);
+}
+
+keysToggle.addEventListener('click', () => {
+  keysPanel.classList.toggle('open');
+});
+
+keysSave.addEventListener('click', async () => {
+  keysSave.disabled = true;
+  keysMsg.textContent = 'Applying…';
+  try {
+    const res = await fetch('/api/session-keys', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        NIMBLE_API_KEY: document.getElementById('k-nimble').value,
+        OPENAI_API_KEY: document.getElementById('k-openai').value,
+        TAVILY_API_KEY: document.getElementById('k-tavily').value,
+        EXA_API_KEY: document.getElementById('k-exa').value,
+      }),
+    });
+    const data = await res.json();
+    updateProvidersUI(data);
+    keysMsg.textContent = 'Applied to this process (not saved to disk).';
+    ['k-nimble', 'k-openai', 'k-tavily', 'k-exa'].forEach((id) => {
+      document.getElementById(id).value = '';
+    });
+  } catch (err) {
+    keysMsg.textContent = 'Could not apply keys: ' + err;
+  }
+  keysSave.disabled = false;
+});
+
 loadProviders();
+renderEmpty();
 
 function addMessage(role, text) {
   const msg = document.createElement('div');
@@ -240,6 +493,7 @@ form.addEventListener('submit', async (e) => {
   if (!message) return;
   input.value = '';
   sendBtn.disabled = true;
+  clearEmpty();
 
   addMessage('user', message);
   const assistantBody = addMessage('assistant', '');
