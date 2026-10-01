@@ -29,6 +29,7 @@ from demo.env import (
     has_openai_key,
     load_env,
 )
+from demo.harness_defaults import DEFAULT_MAX_RESULTS, DEFAULT_SYSTEM_PROMPT, MAX_RESULTS_PRESETS
 from demo.tools import build_tools
 
 load_env()
@@ -38,6 +39,11 @@ STATIC_DIR = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 router = WebRouter()
+
+# In-memory session storage for harness overrides (per-process only)
+# Key: session_id (client-generated UUID)
+_session_prompts: dict[str, str | None] = {}  # Value: custom prompt or None (cleared)
+_session_max_results: dict[str, int] = {}  # Value: 5, 8, or 10 (host preset)
 
 
 class ChatTurn(BaseModel):
@@ -51,6 +57,8 @@ class ChatRequest(BaseModel):
     message: str = ""
     messages: list[ChatTurn] = Field(default_factory=list)
     provider: str = "auto"
+    session_id: str = Field(default="")  # Client-generated session UUID
+    max_results: int | None = None  # Optional host preset override
 
 
 class SessionKeysRequest(BaseModel):
@@ -60,6 +68,13 @@ class SessionKeysRequest(BaseModel):
     TAVILY_API_KEY: str = Field(default="")
     EXA_API_KEY: str = Field(default="")
     OPENAI_API_KEY: str = Field(default="")
+
+
+class SystemPromptRequest(BaseModel):
+    """Set or clear the system prompt for a demo session."""
+
+    session_id: str
+    prompt: str | None = None  # None = cleared (no system prompt)
 
 
 @app.get("/")
@@ -97,23 +112,180 @@ def session_keys(req: SessionKeysRequest) -> dict:
     }
 
 
+@app.get("/api/system-prompt")
+def get_system_prompt(session_id: str = "") -> dict:
+    """Get the effective system prompt for a session.
+    
+    Returns the current prompt text and whether it's default or custom.
+    Rig §7: never return empty system — always DEFAULT_SYSTEM_PROMPT fallback.
+    """
+    effective = _get_effective_system_prompt(session_id)
+    
+    # Check if custom override exists and is non-empty
+    has_custom = (
+        session_id in _session_prompts
+        and _session_prompts[session_id]
+        and _session_prompts[session_id].strip()
+    )
+    
+    return {
+        "effective_prompt": effective,
+        "default_prompt": DEFAULT_SYSTEM_PROMPT,
+        "is_default": not has_custom,
+        "is_custom": has_custom,
+    }
+
+
+@app.post("/api/system-prompt")
+def set_system_prompt(req: SystemPromptRequest) -> dict:
+    """Set a custom system prompt for a demo session.
+    
+    Pass prompt as a non-empty string to set custom.
+    Pass empty/"" to reset to default (removes override).
+    Rig §7: never store empty system — always fall back to DEFAULT_SYSTEM_PROMPT.
+    
+    This is in-memory only (per-process, not written to disk).
+    """
+    if not req.session_id:
+        return {"ok": False, "error": "session_id is required"}
+    
+    prompt_value = (req.prompt or "").strip()
+    
+    if prompt_value:
+        # Non-empty custom prompt
+        _session_prompts[req.session_id] = prompt_value
+        return {
+            "ok": True,
+            "session_id": req.session_id,
+            "is_custom": True,
+        }
+    else:
+        # Empty prompt = reset to default (delete override)
+        if req.session_id in _session_prompts:
+            del _session_prompts[req.session_id]
+        return {
+            "ok": True,
+            "session_id": req.session_id,
+            "is_custom": False,
+            "reset_to_default": True,
+        }
+
+
+@app.post("/api/system-prompt/reset")
+def reset_system_prompt(session_id: str) -> dict:
+    """Reset system prompt to default for a session by removing the override."""
+    if session_id and session_id in _session_prompts:
+        del _session_prompts[session_id]
+    return {"ok": True, "is_default": True}
+
+
+@app.get("/api/harness")
+def get_harness(session_id: str = "") -> dict:
+    """Get current harness settings for a session (system prompt + max_results)."""
+    system_prompt_info = get_system_prompt(session_id)
+    
+    max_results = DEFAULT_MAX_RESULTS
+    if session_id and session_id in _session_max_results:
+        max_results = _session_max_results[session_id]
+    
+    return {
+        **system_prompt_info,
+        "max_results": max_results,
+        "max_results_default": DEFAULT_MAX_RESULTS,
+        "max_results_presets": MAX_RESULTS_PRESETS,
+    }
+
+
+class HarnessRequest(BaseModel):
+    """Update harness settings for a session."""
+
+    session_id: str
+    prompt: str | None = None  # None = leave unchanged
+    max_results: int | None = None  # None = leave unchanged
+
+
+@app.post("/api/harness")
+def update_harness(req: HarnessRequest) -> dict:
+    """Update harness settings (system prompt and/or max_results) for a session.
+    
+    Empty prompt = reset to default (Rig §7: never store empty system).
+    """
+    if not req.session_id:
+        return {"ok": False, "error": "session_id is required"}
+    
+    result = {"ok": True, "session_id": req.session_id}
+    
+    # Update system prompt if provided
+    if req.prompt is not None:
+        prompt_value = req.prompt.strip()
+        if prompt_value:
+            # Non-empty custom prompt
+            _session_prompts[req.session_id] = prompt_value
+            result["is_custom"] = True
+        else:
+            # Empty = reset to default (delete override)
+            if req.session_id in _session_prompts:
+                del _session_prompts[req.session_id]
+            result["is_custom"] = False
+            result["reset_to_default"] = True
+    
+    # Update max_results if provided and valid
+    if req.max_results is not None:
+        if req.max_results in MAX_RESULTS_PRESETS:
+            _session_max_results[req.session_id] = req.max_results
+            result["max_results"] = req.max_results
+        else:
+            result["warning"] = f"max_results must be one of {MAX_RESULTS_PRESETS}"
+    
+    return result
+
+
+@app.post("/api/harness/reset")
+def reset_harness(session_id: str) -> dict:
+    """Reset all harness settings to defaults for a session."""
+    if session_id:
+        if session_id in _session_prompts:
+            del _session_prompts[session_id]
+        if session_id in _session_max_results:
+            del _session_max_results[session_id]
+    return {"ok": True, "is_default": True}
+
+
 def sse(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data)}\n\n"
 
 
-SYSTEM_PROMPT = (
-    "You are a demo agent for WebRouter typed web-context tools "
-    "(web_search + web_extract) on the Vercel AI SDK for Python. "
-    "When the user asks about the live web, prices, news, timelines, or "
-    "challenges your answer, call the tools again — do not ask them to go "
-    "fetch sources. Prefer web_search then web_extract on 2–3 promising URLs "
-    "for multi-part or timeline questions. Keep answers concise and cite URLs."
-)
+def _get_effective_system_prompt(session_id: str) -> str:
+    """Return effective system prompt for a session.
+    
+    Always returns a non-empty string (Rig §7: never run with empty system).
+    
+    Returns:
+        - Custom prompt if set for this session (non-empty string)
+        - DEFAULT_SYSTEM_PROMPT if no override exists or override was cleared
+    """
+    if not session_id or session_id not in _session_prompts:
+        return DEFAULT_SYSTEM_PROMPT
+    
+    # If override exists but is empty/None, fall back to default
+    custom = _session_prompts[session_id]
+    if not custom or not custom.strip():
+        return DEFAULT_SYSTEM_PROMPT
+    
+    return custom
 
 
 def build_messages(req: ChatRequest) -> list:
-    """Build ai messages from full history, or fall back to a single user turn."""
-    out: list = [ai.system_message(SYSTEM_PROMPT)]
+    """Build ai messages from full history, or fall back to a single user turn.
+    
+    Always includes system message (Rig §7: never empty system).
+    """
+    out: list = []
+    
+    # Add system message (always non-empty per Rig §7)
+    system_prompt = _get_effective_system_prompt(req.session_id)
+    out.append(ai.system_message(system_prompt))
+    
     if req.messages:
         for turn in req.messages:
             role = (turn.role or "").lower().strip()
@@ -123,7 +295,7 @@ def build_messages(req: ChatRequest) -> list:
             if role == "assistant":
                 out.append(ai.assistant_message(content))
             elif role == "system":
-                # Ignore client system turns; host owns SYSTEM_PROMPT.
+                # Ignore client system turns; host owns system prompt via harness API.
                 continue
             else:
                 out.append(ai.user_message(content))
@@ -148,11 +320,18 @@ async def stream_agent_turn(req: ChatRequest) -> AsyncIterator[str]:
         return
 
     messages = build_messages(req)
-    if len(messages) < 2:
+    if len(messages) < 1:
         yield sse("error", {"message": "Send a non-empty message (or messages history)."})
         return
 
-    tools = build_tools(router, provider=req.provider)
+    # Use max_results from request, session storage, or default
+    max_results = req.max_results
+    if max_results is None and req.session_id and req.session_id in _session_max_results:
+        max_results = _session_max_results[req.session_id]
+    if max_results is None:
+        max_results = DEFAULT_MAX_RESULTS
+
+    tools = build_tools(router, provider=req.provider, max_results=max_results)
     agent = ai.Agent(tools=tools)
     model = ai.get_model("openai:gpt-4o-mini")
 
