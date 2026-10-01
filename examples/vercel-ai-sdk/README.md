@@ -84,6 +84,9 @@ See **[`PARTNER_TWEAK.md`](PARTNER_TWEAK.md)** for:
 
 ## Partner 30-second walkthrough
 
+**Access setup:** If you need to register, understand access levels (Web vs Root/Editor), or set up IDE access, see [../../docs/PARTNER-ACCESS.md](../../docs/PARTNER-ACCESS.md) first.
+
+
 1. Open the invite link → land on the dark chat UI (**web-router × Vercel AI SDK**).
 2. Confirm provider chips: green = keyed for this session (host-injected Nimble/OpenAI, or your BYOK paste).
 3. Try a prompt, e.g. *“Search for retrieval-augmented generation, then extract the top Wikipedia result and summarize in two sentences.”*
