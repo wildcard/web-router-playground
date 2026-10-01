@@ -92,9 +92,15 @@ Minimal sketch — a thin helper that always searches via Nimble:
 
 ```python
 @ai.tool
-async def nimble_web_search(query: str, max_results: int = 5) -> dict:
-    """Search via WebRouter forced to the nimble provider."""
-    outcome = await asyncio.to_thread(run_search, router, query, "nimble", max_results)
+async def nimble_web_search(query: str) -> dict:
+    """Search via WebRouter forced to the nimble provider.
+    
+    Always fetches several results (host floor of 5). Do not ask the user to
+    fetch links themselves — call this tool again on pushback.
+    """
+    # max_results is HOST-PINNED (not a model arg). Rig STANDING P1: agents
+    # freestyle poorly; Exe proved models emit max_results: 1 overriding defaults.
+    outcome = await asyncio.to_thread(run_search, router, query, "nimble", max_results=5)
     return {
         "provider": outcome.provider,
         "query": outcome.query,
@@ -110,6 +116,8 @@ return [web_search, web_extract, nimble_web_search]
 
 Wire the new tool into the agent the same way — `ai.Agent(tools=build_tools(...))`
 already takes whatever `build_tools` returns (`webapp/main.py` stream path).
+
+**⚠️ CRITICAL:** Do NOT expose `max_results` as a model-facing parameter (e.g. `query: str, max_results: int = 5`). Exe proved that models override schema defaults with `1`, recreating the thin-SERP footgun. Always hide the param; host-pin the floor (≥5) in the tool closure. See Rig STANDING P1 + DEFAULTS §2.
 
 Tips:
 
