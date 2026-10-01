@@ -10,7 +10,7 @@ This directory is the first playground under the [`web-router-playground`](../..
 
 - Branding: **web-router × Vercel AI SDK (Python)**
 - Provider chips (nimble / tavily / exa / openai) — green when a key is available for this session
-- **Harness** control: view/edit system prompt, tune `max_results` preset (5 default / 8–10 for research). Persists in sessionStorage; "Reset" restores Rig built-in defaults (never empty system — Rig §7).
+- **Harness** control: view/edit system prompt, tune `max_results` preset (5 default / 8–10 for research). Persists in sessionStorage; **Reset** restores Rig §4 built-in default (never empty system per Rig §7).
 - Chat composer: ask anything that needs live web search, URL extract, or both
 - Streaming tool cards: `web_search` / `web_extract` fire live; each card shows which provider **served** the call
 - Multi-turn chat: the UI sends full `messages[]` history each turn (follow-ups keep context)

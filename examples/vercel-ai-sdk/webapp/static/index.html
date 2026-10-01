@@ -378,7 +378,7 @@
     <p>
       <strong>Host/demo only</strong> — not Nimble WebRouter product.
       Defaults from Rig <code style="font-family:var(--mono);font-size:11px">DEFAULTS.md</code> (research-backed).
-      Changes persist in sessionStorage (refresh keeps your tweaks).
+      Changes persist in sessionStorage. <strong>Reset</strong> restores Rig §4 default (never empty system per §7).
     </p>
     <label style="display:block;margin-bottom:12px;font-family:var(--mono);font-size:10px;color:var(--zinc-dim);text-transform:uppercase;letter-spacing:0.04em;">
       System prompt <span id="harness-status" class="harness-status">default</span>
@@ -572,20 +572,17 @@ async function loadHarnessSettings() {
     const res = await fetch(`/api/harness?session_id=${sessionId}`);
     const data = await res.json();
     
-    // Load system prompt
+    // Load system prompt (always non-empty per Rig §7)
     const prompt = data.effective_prompt || '';
     harnessPrompt.value = prompt;
     
-    // Update status badge
-    if (data.is_default) {
-      harnessStatus.textContent = 'default';
-      harnessStatus.style.color = 'var(--accent)';
-    } else if (data.is_custom) {
+    // Update status badge (only "default" or "custom" — never empty system)
+    if (data.is_custom) {
       harnessStatus.textContent = 'custom';
       harnessStatus.style.color = 'var(--warn)';
-    } else if (data.is_cleared) {
-      harnessStatus.textContent = 'cleared (using default)';
-      harnessStatus.style.color = 'var(--zinc-dim)';
+    } else {
+      harnessStatus.textContent = 'default (Rig §4)';
+      harnessStatus.style.color = 'var(--accent)';
     }
     
     // Load max_results

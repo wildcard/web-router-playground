@@ -116,20 +116,23 @@ def session_keys(req: SessionKeysRequest) -> dict:
 def get_system_prompt(session_id: str = "") -> dict:
     """Get the effective system prompt for a session.
     
-    Returns the current prompt text, whether it's the default, custom, or cleared,
-    and the default prompt text for reference.
+    Returns the current prompt text and whether it's default or custom.
+    Rig §7: never return empty system — always DEFAULT_SYSTEM_PROMPT fallback.
     """
     effective = _get_effective_system_prompt(session_id)
-    is_default = session_id not in _session_prompts
-    is_custom = session_id in _session_prompts and _session_prompts[session_id] is not None
-    is_cleared = session_id in _session_prompts and _session_prompts[session_id] is None
+    
+    # Check if custom override exists and is non-empty
+    has_custom = (
+        session_id in _session_prompts
+        and _session_prompts[session_id]
+        and _session_prompts[session_id].strip()
+    )
     
     return {
         "effective_prompt": effective,
         "default_prompt": DEFAULT_SYSTEM_PROMPT,
-        "is_default": is_default,
-        "is_custom": is_custom,
-        "is_cleared": is_cleared,
+        "is_default": not has_custom,
+        "is_custom": has_custom,
     }
 
 
@@ -137,21 +140,35 @@ def get_system_prompt(session_id: str = "") -> dict:
 def set_system_prompt(req: SystemPromptRequest) -> dict:
     """Set a custom system prompt for a demo session.
     
-    Pass prompt as a non-empty string to set custom, or None/"" to clear.
+    Pass prompt as a non-empty string to set custom.
+    Pass empty/"" to reset to default (removes override).
+    Rig §7: never store empty system — always fall back to DEFAULT_SYSTEM_PROMPT.
+    
     This is in-memory only (per-process, not written to disk).
     """
     if not req.session_id:
         return {"ok": False, "error": "session_id is required"}
     
-    prompt_value = (req.prompt or "").strip() if req.prompt else None
-    _session_prompts[req.session_id] = prompt_value
+    prompt_value = (req.prompt or "").strip()
     
-    return {
-        "ok": True,
-        "session_id": req.session_id,
-        "is_custom": prompt_value is not None and len(prompt_value) > 0,
-        "is_cleared": prompt_value is None,
-    }
+    if prompt_value:
+        # Non-empty custom prompt
+        _session_prompts[req.session_id] = prompt_value
+        return {
+            "ok": True,
+            "session_id": req.session_id,
+            "is_custom": True,
+        }
+    else:
+        # Empty prompt = reset to default (delete override)
+        if req.session_id in _session_prompts:
+            del _session_prompts[req.session_id]
+        return {
+            "ok": True,
+            "session_id": req.session_id,
+            "is_custom": False,
+            "reset_to_default": True,
+        }
 
 
 @app.post("/api/system-prompt/reset")
@@ -189,7 +206,10 @@ class HarnessRequest(BaseModel):
 
 @app.post("/api/harness")
 def update_harness(req: HarnessRequest) -> dict:
-    """Update harness settings (system prompt and/or max_results) for a session."""
+    """Update harness settings (system prompt and/or max_results) for a session.
+    
+    Empty prompt = reset to default (Rig §7: never store empty system).
+    """
     if not req.session_id:
         return {"ok": False, "error": "session_id is required"}
     
@@ -197,10 +217,17 @@ def update_harness(req: HarnessRequest) -> dict:
     
     # Update system prompt if provided
     if req.prompt is not None:
-        prompt_value = req.prompt.strip() if req.prompt else None
-        _session_prompts[req.session_id] = prompt_value
-        result["is_custom"] = prompt_value is not None and len(prompt_value) > 0
-        result["is_cleared"] = prompt_value is None
+        prompt_value = req.prompt.strip()
+        if prompt_value:
+            # Non-empty custom prompt
+            _session_prompts[req.session_id] = prompt_value
+            result["is_custom"] = True
+        else:
+            # Empty = reset to default (delete override)
+            if req.session_id in _session_prompts:
+                del _session_prompts[req.session_id]
+            result["is_custom"] = False
+            result["reset_to_default"] = True
     
     # Update max_results if provided and valid
     if req.max_results is not None:
@@ -228,27 +255,36 @@ def sse(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data)}\n\n"
 
 
-def _get_effective_system_prompt(session_id: str) -> str | None:
+def _get_effective_system_prompt(session_id: str) -> str:
     """Return effective system prompt for a session.
     
+    Always returns a non-empty string (Rig §7: never run with empty system).
+    
     Returns:
-        - Custom prompt if set for this session
-        - None if explicitly cleared for this session
-        - DEFAULT_SYSTEM_PROMPT if no override exists
+        - Custom prompt if set for this session (non-empty string)
+        - DEFAULT_SYSTEM_PROMPT if no override exists or override was cleared
     """
     if not session_id or session_id not in _session_prompts:
         return DEFAULT_SYSTEM_PROMPT
-    return _session_prompts[session_id]
+    
+    # If override exists but is empty/None, fall back to default
+    custom = _session_prompts[session_id]
+    if not custom or not custom.strip():
+        return DEFAULT_SYSTEM_PROMPT
+    
+    return custom
 
 
 def build_messages(req: ChatRequest) -> list:
-    """Build ai messages from full history, or fall back to a single user turn."""
+    """Build ai messages from full history, or fall back to a single user turn.
+    
+    Always includes system message (Rig §7: never empty system).
+    """
     out: list = []
     
-    # Add system message if one is configured (default, custom, or cleared)
+    # Add system message (always non-empty per Rig §7)
     system_prompt = _get_effective_system_prompt(req.session_id)
-    if system_prompt:
-        out.append(ai.system_message(system_prompt))
+    out.append(ai.system_message(system_prompt))
     
     if req.messages:
         for turn in req.messages:
