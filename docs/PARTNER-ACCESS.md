@@ -5,6 +5,12 @@ This document describes how partners access the **WebRouter** invite-gated sandb
 > **Audience:** Partners evaluating WebRouter integrations.  
 > **Status:** Invite-only preview. Not a public playground.
 
+## Related Documentation
+
+- **[PARTNER-SANDBOX-FLOWS.md](PARTNER-SANDBOX-FLOWS.md)** — Complete access ladder from Web to live code editing, provisioning paths, and visual walkthrough
+- **[PARTNER-EMAIL-ADDON.md](PARTNER-EMAIL-ADDON.md)** — Quick start message for new partners
+- **[guide-shots/](guide-shots/)** — Screenshots of the live editing workflow
+
 ---
 
 ## Access Overview
@@ -50,6 +56,7 @@ Web-only partners **cannot** read environment variables or VM files. This is the
 **Important:** 
 - Root access allows reading environment variables and files on the VM, including any secrets in the process environment
 - **Root access requires an existing exe.dev account** — you must have Web access first before Root can be granted
+- **Root access requires operator provisioning** — see [PARTNER-SANDBOX-FLOWS.md](PARTNER-SANDBOX-FLOWS.md) for the complete access ladder and live code editing paths
 
 ---
 
@@ -84,6 +91,8 @@ If you need Root/Editor access to modify code, the sequence is:
 This sequence ensures no partner with Root access can read host-provided API keys.
 
 **Most partners do not need Root access** — Web access is sufficient for evaluating WebRouter's capabilities.
+
+**Alternative:** For isolated editing or when multiple partners need concurrent IDE access, the operator may provision a **dedicated partner VM**. See [PARTNER-SANDBOX-FLOWS.md](PARTNER-SANDBOX-FLOWS.md#option-b-dedicated-partner-vm-preferred-at-scale) for details on dedicated VM provisioning.
 
 ---
 
@@ -152,6 +161,8 @@ These configuration options are available in the web UI. System prompt and max r
 
 ## Resources
 
+- **[PARTNER-SANDBOX-FLOWS.md](PARTNER-SANDBOX-FLOWS.md)** — Complete access ladder and provisioning paths
+- **[PARTNER-EMAIL-ADDON.md](PARTNER-EMAIL-ADDON.md)** — Quick start message
 - [Vercel AI SDK integration README](../examples/vercel-ai-sdk/README.md)
 - [Partner tweak guide (add tools, configure router)](../examples/vercel-ai-sdk/PARTNER_TWEAK.md)
 - [exe.dev Sharing documentation](https://exe.dev/docs/sharing)

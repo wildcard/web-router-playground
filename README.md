@@ -14,9 +14,11 @@ Room for more: add a sibling under `examples/<framework>/` with its own README, 
 
 **Hosted sandbox (invite-gated):** Exe.dev VM `webrouter-aisdk` → `https://webrouter-aisdk.exe.xyz/`. Not open to the anonymous public web — partners get invite / auth from the host. The *running* sandbox is this monorepo’s `examples/vercel-ai-sdk` tree (not a loose zip fork). Public clone = code showcase; live keys stay on the private invite session.
 
-**Partner access:** See [`docs/PARTNER-ACCESS.md`](docs/PARTNER-ACCESS.md) for login requirements, access levels (Web vs Root/Editor), secret custody constraints, and IDE setup.
+**Partner access:**
+- **[docs/PARTNER-ACCESS.md](docs/PARTNER-ACCESS.md)** — Access setup, login requirements, Web vs Root/Editor levels, custody constraints, IDE setup
+- **[docs/PARTNER-SANDBOX-FLOWS.md](docs/PARTNER-SANDBOX-FLOWS.md)** — Complete access ladder, provisioning paths, visual walkthrough
+- **[docs/PARTNER-EMAIL-ADDON.md](docs/PARTNER-EMAIL-ADDON.md)** — Quick start message for new partners
 
-**Partner access:** See [`docs/PARTNER-ACCESS.md`](docs/PARTNER-ACCESS.md) for login requirements, access levels (Web vs Root/Editor), secret custody constraints, and IDE setup.
 
 ### Exe deploy SoT (host-ops)
 

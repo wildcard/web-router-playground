@@ -84,7 +84,9 @@ See **[`PARTNER_TWEAK.md`](PARTNER_TWEAK.md)** for:
 
 ## Partner 30-second walkthrough
 
-**Access setup:** If you need to register, understand access levels (Web vs Root/Editor), or set up IDE access, see [../../docs/PARTNER-ACCESS.md](../../docs/PARTNER-ACCESS.md) first.
+**Access setup:** If you need to register, understand access levels (Web vs Root/Editor), or set up IDE access, see:
+- [../../docs/PARTNER-ACCESS.md](../../docs/PARTNER-ACCESS.md) — Access playbook and custody constraints
+- [../../docs/PARTNER-SANDBOX-FLOWS.md](../../docs/PARTNER-SANDBOX-FLOWS.md) — Complete access ladder and provisioning paths
 
 
 1. Open the invite link → land on the dark chat UI (**web-router × Vercel AI SDK**).
