@@ -1,5 +1,17 @@
 # Vercel AI SDK (Python)
 
+## How this works
+
+**This is an invite-only preview** of WebRouter search and extract, used as tools inside the Vercel AI SDK for Python. Not a public package launch.
+
+**Click a starter, or type your own.** You will see `web_search` and `web_extract` cards, and which provider served them.
+
+**Chips turn green** when a key is already on this session. If they are not, you are still in the right place. **Session keys** is a paste for this visit only. This preview does not ship with a shared key.
+
+**The open-source example is this same app.** A 30-second walkthrough is in the repo. You do not need the repo to try this page.
+
+---
+
 **Live demo:** WebRouter `search` + `extract` (typed web-context / browser tools) plugged into the Vercel AI SDK for Python as ordinary `@ai.tool` functions. No fork of either package.
 
 This directory is the first playground under the [`web-router-playground`](../../) monorepo. The invite-gated Exe sandbox runs **this tree** (cwd = here), not a loose zip fork.
