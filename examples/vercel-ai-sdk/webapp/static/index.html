@@ -86,6 +86,51 @@
   }
   .keys-hint.warn { color: var(--warn); }
 
+  #how-this-works {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--panel);
+    margin: 12px 0 8px;
+  }
+  #how-this-works summary {
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--white);
+    user-select: none;
+    list-style: none;
+  }
+  #how-this-works summary::-webkit-details-marker { display: none; }
+  #how-this-works summary::before {
+    content: '▸';
+    display: inline-block;
+    margin-right: 8px;
+    transition: transform 0.2s;
+    color: var(--zinc);
+  }
+  #how-this-works[open] summary::before { transform: rotate(90deg); }
+  #how-this-works summary:hover { color: var(--zinc); }
+  #how-this-works .content {
+    padding: 0 14px 14px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--zinc-dim);
+  }
+  #how-this-works .content p {
+    margin: 0 0 10px;
+  }
+  #how-this-works .content p:last-child { margin-bottom: 0; }
+  #how-this-works .content strong { color: var(--zinc); font-weight: 500; }
+  #how-this-works .content code {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--zinc);
+    background: var(--bg);
+    padding: 2px 5px;
+    border-radius: 4px;
+  }
+
   #keys-panel, #harness-panel {
     display: none;
     border: 1px solid var(--border);
@@ -352,6 +397,16 @@
   </header>
 
   <div id="providers"></div>
+
+  <details id="how-this-works">
+    <summary>How this works</summary>
+    <div class="content">
+      <p><strong>This is an invite-only preview</strong> of WebRouter search and extract, used as tools inside the Vercel AI SDK for Python. Not a public package launch.</p>
+      <p><strong>Click a starter, or type your own.</strong> You will see <code>web_search</code> and <code>web_extract</code> cards, and which provider served them.</p>
+      <p><strong>Chips turn green</strong> when a key is already on this session. If they are not, you are still in the right place. <strong>Session keys</strong> is a paste for this visit only. This preview does not ship with a shared key.</p>
+      <p><strong>The open-source example is this same app.</strong> A 30-second walkthrough is in the repo. You do not need the repo to try this page.</p>
+    </div>
+  </details>
 
   <div id="keys-panel" aria-live="polite">
     <h3>Session keys (BYOK)</h3>
