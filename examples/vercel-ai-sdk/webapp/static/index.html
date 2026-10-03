@@ -144,46 +144,103 @@
   .process-steps {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 2px;
+    position: relative;
   }
   .process-step {
     display: flex;
+    align-items: flex-start;
     gap: 12px;
-    padding: 10px 12px;
+    padding: 14px 16px;
     border: 1px solid var(--border);
     border-radius: 8px;
     background: var(--panel);
     transition: all 0.2s;
+    position: relative;
   }
-  .process-step .num {
-    width: 20px;
-    height: 20px;
+  .process-step::after {
+    content: '↓';
+    position: absolute;
+    left: 50%;
+    bottom: -12px;
+    transform: translateX(-50%);
+    color: var(--border);
+    font-size: 14px;
+    z-index: 1;
+  }
+  .process-step:last-child::after { content: none; }
+  .process-step .icon {
+    width: 32px;
+    height: 32px;
     flex-shrink: 0;
-    border-radius: 50%;
-    background: var(--border);
-    color: var(--zinc-dim);
+    border-radius: 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 11px;
-    font-weight: 600;
-    font-family: var(--mono);
+    font-size: 16px;
   }
   .process-step.active {
     border-color: var(--accent);
     background: rgba(34,197,94,0.06);
   }
-  .process-step.active .num {
+  .process-step.active::after {
+    color: var(--accent);
+  }
+  .process-step.active .icon {
     background: var(--accent);
-    color: var(--bg);
+    border-color: var(--accent);
+  }
+  .process-step .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .process-step .label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--white);
+    letter-spacing: -0.01em;
   }
   .process-step .desc {
-    flex: 1;
-    font-size: 13px;
+    font-size: 12px;
     line-height: 1.5;
     color: var(--zinc-dim);
   }
-  .process-step.active .desc { color: var(--white); }
+  .process-step.active .desc { color: var(--zinc); }
+  .process-step code {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--zinc);
+    background: var(--bg);
+    padding: 1px 4px;
+    border-radius: 3px;
+  }
+  .control-item {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .control-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+  .control-item h4 {
+    margin: 0 0 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--white);
+    font-family: var(--mono);
+  }
+  .control-item p {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--zinc-dim);
+  }
   .repo-link {
     display: inline-flex;
     align-items: center;
@@ -650,34 +707,59 @@
       <h3>The process</h3>
       <div class="process-steps">
         <div class="process-step" data-step="input">
-          <div class="num">1</div>
-          <div class="desc">You ask in the chat</div>
+          <div class="icon">💬</div>
+          <div class="content">
+            <div class="label">You ask in the chat</div>
+            <div class="desc">Type a question or pick a starter</div>
+          </div>
         </div>
         <div class="process-step" data-step="agent">
-          <div class="num">2</div>
-          <div class="desc">The Vercel AI SDK agent decides to call a tool</div>
+          <div class="icon">🤖</div>
+          <div class="content">
+            <div class="label">Agent decides</div>
+            <div class="desc">Vercel AI SDK agent chooses to call a tool</div>
+          </div>
         </div>
         <div class="process-step" data-step="tools">
-          <div class="num">3</div>
-          <div class="desc">WebRouter exposes two tools, <code>web_search</code> and <code>web_extract</code>, as ordinary <code>@ai.tool</code> functions (<code>build_tools(WebRouter())</code>). No fork of the SDK.</div>
+          <div class="icon">🔧</div>
+          <div class="content">
+            <div class="label">WebRouter tools</div>
+            <div class="desc">Exposes <code>web_search</code> and <code>web_extract</code> as ordinary <code>@ai.tool</code> functions. No fork of the SDK.</div>
+          </div>
         </div>
         <div class="process-step" data-step="provider">
-          <div class="num">4</div>
-          <div class="desc">A provider adapter runs the call (nimble, tavily, or exa). Same call shape, providers behind adapters.</div>
+          <div class="icon">⚡</div>
+          <div class="content">
+            <div class="label">Provider adapter</div>
+            <div class="desc">Runs the call through nimble, tavily, or exa. Same shape, providers behind adapters.</div>
+          </div>
         </div>
         <div class="process-step" data-step="result">
-          <div class="num">5</div>
-          <div class="desc">The result comes back on the tool card, including which provider served it</div>
+          <div class="icon">✓</div>
+          <div class="content">
+            <div class="label">Result on the card</div>
+            <div class="desc">Tool card shows which provider served it</div>
+          </div>
         </div>
       </div>
-    </div>
-    
-    <div class="drawer-section">
-      <p style="color:var(--zinc);font-size:12px;line-height:1.6;">
+      <p style="color:var(--zinc);font-size:12px;line-height:1.6;margin-top:16px;">
         <strong>Today is that direct path only.</strong> This preview does not include intelligent routing, a gateway, MCP, research/browse modes, or a public package launch.
       </p>
     </div>
 
+    <div class="drawer-section">
+      <h3>Header controls</h3>
+      <div class="control-item">
+        <h4>Session keys</h4>
+        <p>A paste for this visit only. Chips turn green when a key is already on the session. Empty fields leave existing values alone. Nothing is saved to disk or git. This preview does not ship with a shared key.</p>
+        <p style="margin-top:6px;">Get keys from: <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">OpenAI</a>, <a href="https://app.tavily.com/home" target="_blank" rel="noopener">Tavily</a>, <a href="https://dashboard.exa.ai/api-keys" target="_blank" rel="noopener">Exa</a>. Nimble key comes from Nimble.</p>
+      </div>
+      <div class="control-item">
+        <h4>Harness</h4>
+        <p>View or edit the system prompt and the search <code>max_results</code> preset for this browser. Reset restores the built-in default. Does not change providers or keys.</p>
+      </div>
+    </div>
+    
     <div class="drawer-section">
       <h3>Open-source example</h3>
       <p>This playground is the open-source example. The code lives in:</p>
