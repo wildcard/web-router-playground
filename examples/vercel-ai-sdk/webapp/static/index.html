@@ -73,13 +73,13 @@
   #drawer-overlay.open { display: block; }
   #drawer {
     position: fixed;
-    top: 0; right: 0; bottom: 0;
-    width: 420px;
+    top: 0; left: 0; bottom: 0;
+    width: 460px;
     max-width: 90vw;
     background: var(--bg);
-    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
     z-index: 101;
-    transform: translateX(100%);
+    transform: translateX(-100%);
     transition: transform 0.25s ease;
     overflow-y: auto;
     display: flex;
@@ -281,13 +281,13 @@
   }
   .keys-hint.warn { color: var(--warn); }
 
-  #how-this-works {
+  #about-demo {
     border: 1px solid var(--border);
     border-radius: 10px;
     background: var(--panel);
     margin: 12px 0 8px;
   }
-  #how-this-works summary {
+  #about-demo summary {
     padding: 10px 14px;
     cursor: pointer;
     font-size: 13px;
@@ -296,35 +296,27 @@
     user-select: none;
     list-style: none;
   }
-  #how-this-works summary::-webkit-details-marker { display: none; }
-  #how-this-works summary::before {
+  #about-demo summary::-webkit-details-marker { display: none; }
+  #about-demo summary::before {
     content: '▸';
     display: inline-block;
     margin-right: 8px;
     transition: transform 0.2s;
     color: var(--zinc);
   }
-  #how-this-works[open] summary::before { transform: rotate(90deg); }
-  #how-this-works summary:hover { color: var(--zinc); }
-  #how-this-works .content {
+  #about-demo[open] summary::before { transform: rotate(90deg); }
+  #about-demo summary:hover { color: var(--zinc); }
+  #about-demo .content {
     padding: 0 14px 14px;
     font-size: 12px;
     line-height: 1.6;
     color: var(--zinc-dim);
   }
-  #how-this-works .content p {
+  #about-demo .content p {
     margin: 0 0 10px;
   }
-  #how-this-works .content p:last-child { margin-bottom: 0; }
-  #how-this-works .content strong { color: var(--zinc); font-weight: 500; }
-  #how-this-works .content code {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--zinc);
-    background: var(--bg);
-    padding: 2px 5px;
-    border-radius: 4px;
-  }
+  #about-demo .content p:last-child { margin-bottom: 0; }
+  #about-demo .content strong { color: var(--zinc); font-weight: 500; }
 
   #keys-panel, #harness-panel {
     display: none;
@@ -594,7 +586,7 @@
       </div>
     </div>
     <div class="header-actions">
-      <button type="button" class="ghost-btn" id="drawer-toggle" title="How WebRouter tools work">How it works</button>
+      <button type="button" class="ghost-btn" id="drawer-toggle" title="30-second walkthrough">Walkthrough</button>
       <button type="button" class="ghost-btn" id="keys-toggle" title="Paste your own API keys for this session">Session keys</button>
       <button type="button" class="ghost-btn" id="harness-toggle" title="View and edit harness settings (system prompt, search config)">Harness</button>
       <select id="provider" title="Preferred search/extract provider">
@@ -608,13 +600,11 @@
 
   <div id="providers"></div>
 
-  <details id="how-this-works">
-    <summary>How this works</summary>
+  <details id="about-demo">
+    <summary>What this demo is</summary>
     <div class="content">
-      <p><strong>This is an invite-only preview</strong> of WebRouter search and extract, used as tools inside the Vercel AI SDK for Python. Not a public package launch.</p>
-      <p><strong>Click a starter, or type your own.</strong> You will see <code>web_search</code> and <code>web_extract</code> cards, and which provider served them.</p>
-      <p><strong>Chips turn green</strong> when a key is already on this session. If they are not, you are still in the right place. <strong>Session keys</strong> is a paste for this visit only. This preview does not ship with a shared key.</p>
-      <p><strong>The open-source example is this same app.</strong> A 30-second walkthrough is in the repo. You do not need the repo to try this page.</p>
+      <p>This open-source example shows <strong>WebRouter search and extract</strong> used as tools inside the Vercel AI SDK for Python. Invite-only preview, not a public package launch.</p>
+      <p><strong>The page is enough to try it.</strong> Click a starter or type your own. See the Walkthrough for the full 30-second tour.</p>
     </div>
   </details>
 
@@ -699,12 +689,17 @@
 <div id="drawer-overlay"></div>
 <div id="drawer">
   <div id="drawer-header">
-    <h2>How WebRouter works</h2>
+    <h2>30-second walkthrough</h2>
     <button id="drawer-close">Close</button>
   </div>
   <div id="drawer-content">
     <div class="drawer-section">
-      <h3>The process</h3>
+      <h3>What we're trying to do</h3>
+      <p>Show WebRouter <strong>search</strong> and <strong>extract</strong> (typed web-context tools) plugged into the Vercel AI SDK for Python as ordinary <code>@ai.tool</code> functions. No fork of the SDK. Invite-only preview, not a public package launch.</p>
+    </div>
+
+    <div class="drawer-section">
+      <h3>How a turn flows</h3>
       <div class="process-steps">
         <div class="process-step" data-step="input">
           <div class="icon">💬</div>
@@ -724,54 +719,54 @@
           <div class="icon">🔧</div>
           <div class="content">
             <div class="label">WebRouter tools</div>
-            <div class="desc">Exposes <code>web_search</code> and <code>web_extract</code> as ordinary <code>@ai.tool</code> functions. No fork of the SDK.</div>
+            <div class="desc"><code>web_search</code> and <code>web_extract</code> exposed as <code>@ai.tool</code> functions</div>
           </div>
         </div>
         <div class="process-step" data-step="provider">
           <div class="icon">⚡</div>
           <div class="content">
             <div class="label">Provider adapter</div>
-            <div class="desc">Runs the call through nimble, tavily, or exa. Same shape, providers behind adapters.</div>
+            <div class="desc">Runs through nimble, tavily, or exa behind adapters</div>
           </div>
         </div>
         <div class="process-step" data-step="result">
           <div class="icon">✓</div>
           <div class="content">
             <div class="label">Result on the card</div>
-            <div class="desc">Tool card shows which provider served it</div>
+            <div class="desc">Shows which provider served it</div>
           </div>
         </div>
       </div>
       <p style="color:var(--zinc);font-size:12px;line-height:1.6;margin-top:16px;">
-        <strong>Today is that direct path only.</strong> This preview does not include intelligent routing, a gateway, MCP, research/browse modes, or a public package launch.
+        <strong>Today is that direct path only.</strong> No intelligent routing, gateway, MCP, research/browse modes, or public package launch.
       </p>
     </div>
 
     <div class="drawer-section">
-      <h3>Header controls</h3>
+      <h3>The controls</h3>
       <div class="control-item">
         <h4>Session keys</h4>
-        <p>A paste for this visit only. Chips turn green when a key is already on the session. Empty fields leave existing values alone. Nothing is saved to disk or git. This preview does not ship with a shared key.</p>
-        <p style="margin-top:6px;">Get keys from: <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">OpenAI</a>, <a href="https://app.tavily.com/home" target="_blank" rel="noopener">Tavily</a>, <a href="https://dashboard.exa.ai/api-keys" target="_blank" rel="noopener">Exa</a>. Nimble key comes from Nimble.</p>
+        <p>Paste keys for this visit only. Chips turn green when a key is on the session. Empty fields leave existing values alone. Nothing saved to disk or git. No shared key in this preview.</p>
+        <p style="margin-top:6px;font-size:11px;">Get keys: <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">OpenAI</a> · <a href="https://app.tavily.com/home" target="_blank" rel="noopener">Tavily</a> · <a href="https://dashboard.exa.ai/api-keys" target="_blank" rel="noopener">Exa</a> · Nimble key from Nimble</p>
       </div>
       <div class="control-item">
         <h4>Harness</h4>
-        <p>View or edit the system prompt and the search <code>max_results</code> preset for this browser. Reset restores the built-in default. Does not change providers or keys.</p>
+        <p>View/edit system prompt and search <code>max_results</code> preset for this browser. Reset restores built-in default. Does not change providers or keys.</p>
       </div>
     </div>
     
     <div class="drawer-section">
-      <h3>Open-source example</h3>
-      <p>This playground is the open-source example. The code lives in:</p>
-      <a href="https://github.com/wildcard/web-router-playground" target="_blank" rel="noopener" class="repo-link">
+      <h3>Next steps</h3>
+      <p style="margin-bottom:12px;"><strong>You can try the page as-is.</strong> Pick a starter or type your own question.</p>
+      <p style="margin-bottom:12px;"><strong>The code is public.</strong> This playground is the open-source example:</p>
+      <a href="https://github.com/wildcard/web-router-playground" target="_blank" rel="noopener" class="repo-link" style="margin-bottom:12px;">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
           <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
         </svg>
         wildcard/web-router-playground
       </a>
-      <p style="margin-top:12px;font-size:12px;color:var(--zinc-dim);">
-        The Vercel AI SDK example lives at <code>examples/vercel-ai-sdk</code>
-      </p>
+      <p style="font-size:11px;color:var(--zinc-dim);margin-bottom:12px;">The Vercel AI SDK example lives at <code>examples/vercel-ai-sdk</code></p>
+      <p style="font-size:12px;"><strong>Changing this live sandbox</strong> (editing the code here) is a follow-up we turn on when you ask. It is not on by default.</p>
     </div>
   </div>
 </div>
