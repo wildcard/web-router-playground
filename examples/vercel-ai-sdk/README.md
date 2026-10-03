@@ -8,7 +8,7 @@ This directory is the first playground under the [`web-router-playground`](../..
 
 ## What you see in the web UI
 
-- Branding: **web-router × Vercel AI SDK (Python)**
+- Branding: **WebRouter × Vercel AI SDK (Python)**
 - Provider chips (nimble / tavily / exa / openai) — green when a key is available for this session
 - **Harness** control: view/edit system prompt, tune `max_results` preset (5 default / 8–10 for research). Persists in sessionStorage; **Reset** restores Rig §4 built-in default (never empty system per Rig §7).
 - Chat composer: ask anything that needs live web search, URL extract, or both
@@ -89,7 +89,7 @@ See **[`PARTNER_TWEAK.md`](PARTNER_TWEAK.md)** for:
 - [../../docs/PARTNER-SANDBOX-FLOWS.md](../../docs/PARTNER-SANDBOX-FLOWS.md) — Complete access ladder and provisioning paths
 
 
-1. Open the invite link → land on the dark chat UI (**web-router × Vercel AI SDK**).
+1. Open the invite link → land on the dark chat UI (**WebRouter × Vercel AI SDK**).
 2. Confirm provider chips: green = keyed for this session (host-injected Nimble/OpenAI, or your BYOK paste).
 3. Try a prompt, e.g. *“Search for retrieval-augmented generation, then extract the top Wikipedia result and summarize in two sentences.”*
 4. Watch streaming **tool cards** for `web_search` / `web_extract` and the **served by \<provider\>** line — that is live WebRouter web-context, not a blank shell.

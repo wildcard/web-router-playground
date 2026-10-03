@@ -42,7 +42,7 @@ AGENT_QUESTION = (
 
 
 def banner() -> None:
-    title = Text("web-router", style=f"bold {BRIGHT}")
+    title = Text("WebRouter", style=f"bold {BRIGHT}")
     title.append("  x  ", style=DIM)
     title.append("Vercel AI SDK (Python)", style=f"bold {BRIGHT}")
     console.print()
