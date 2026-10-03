@@ -63,6 +63,144 @@
   select:hover, .ghost-btn:hover { border-color: var(--zinc-dim); }
   .ghost-btn { color: var(--zinc); }
 
+  #drawer-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 100;
+    display: none;
+  }
+  #drawer-overlay.open { display: block; }
+  #drawer {
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    width: 420px;
+    max-width: 90vw;
+    background: var(--bg);
+    border-left: 1px solid var(--border);
+    z-index: 101;
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  #drawer.open { transform: translateX(0); }
+  #drawer-header {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  #drawer-header h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  #drawer-close {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--zinc);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  #drawer-close:hover { border-color: var(--zinc-dim); }
+  #drawer-content {
+    flex: 1;
+    padding: 20px;
+  }
+  .drawer-section {
+    margin-bottom: 24px;
+  }
+  .drawer-section h3 {
+    margin: 0 0 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--white);
+  }
+  .drawer-section p {
+    margin: 0 0 10px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--zinc-dim);
+  }
+  .drawer-section p:last-child { margin-bottom: 0; }
+  .drawer-section a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .drawer-section a:hover { text-decoration: underline; }
+  .drawer-section code {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--zinc);
+    background: var(--panel);
+    padding: 2px 5px;
+    border-radius: 4px;
+  }
+  .process-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .process-step {
+    display: flex;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--panel);
+    transition: all 0.2s;
+  }
+  .process-step .num {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--border);
+    color: var(--zinc-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--mono);
+  }
+  .process-step.active {
+    border-color: var(--accent);
+    background: rgba(34,197,94,0.06);
+  }
+  .process-step.active .num {
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .process-step .desc {
+    flex: 1;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--zinc-dim);
+  }
+  .process-step.active .desc { color: var(--white); }
+  .repo-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--panel);
+    color: var(--zinc);
+    text-decoration: none;
+    font-size: 13px;
+  }
+  .repo-link:hover {
+    border-color: var(--zinc-dim);
+    color: var(--white);
+  }
+
   #providers {
     display: flex;
     gap: 8px;
@@ -169,6 +307,20 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
+  .keys-grid .key-note {
+    font-family: var(--sans);
+    font-size: 11px;
+    color: var(--zinc-dim);
+    text-transform: none;
+    letter-spacing: normal;
+    margin-top: 2px;
+    line-height: 1.4;
+  }
+  .keys-grid .key-note a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .keys-grid .key-note a:hover { text-decoration: underline; }
   .keys-grid input {
     background: var(--bg);
     border: 1px solid var(--border);
@@ -385,6 +537,7 @@
       </div>
     </div>
     <div class="header-actions">
+      <button type="button" class="ghost-btn" id="drawer-toggle" title="How WebRouter tools work">How it works</button>
       <button type="button" class="ghost-btn" id="keys-toggle" title="Paste your own API keys for this session">Session keys</button>
       <button type="button" class="ghost-btn" id="harness-toggle" title="View and edit harness settings (system prompt, search config)">Harness</button>
       <select id="provider" title="Preferred search/extract provider">
@@ -417,10 +570,26 @@
       <code style="font-family:var(--mono);font-size:11px">.env.example</code> when running from clone.
     </p>
     <div class="keys-grid">
-      <label>NIMBLE_API_KEY<input id="k-nimble" type="password" autocomplete="off" spellcheck="false" /></label>
-      <label>OPENAI_API_KEY<input id="k-openai" type="password" autocomplete="off" spellcheck="false" /></label>
-      <label>TAVILY_API_KEY<input id="k-tavily" type="password" autocomplete="off" spellcheck="false" /></label>
-      <label>EXA_API_KEY<input id="k-exa" type="password" autocomplete="off" spellcheck="false" /></label>
+      <label>
+        NIMBLE_API_KEY
+        <input id="k-nimble" type="password" autocomplete="off" spellcheck="false" />
+        <span class="key-note">Key from Nimble</span>
+      </label>
+      <label>
+        OPENAI_API_KEY
+        <input id="k-openai" type="password" autocomplete="off" spellcheck="false" />
+        <span class="key-note"><a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">Get from OpenAI →</a></span>
+      </label>
+      <label>
+        TAVILY_API_KEY
+        <input id="k-tavily" type="password" autocomplete="off" spellcheck="false" />
+        <span class="key-note"><a href="https://app.tavily.com/home" target="_blank" rel="noopener">Get from Tavily →</a></span>
+      </label>
+      <label>
+        EXA_API_KEY
+        <input id="k-exa" type="password" autocomplete="off" spellcheck="false" />
+        <span class="key-note"><a href="https://dashboard.exa.ai/api-keys" target="_blank" rel="noopener">Get from Exa →</a></span>
+      </label>
     </div>
     <div class="keys-actions">
       <button type="button" id="keys-save">Apply to session</button>
@@ -470,6 +639,61 @@
   </div>
 </div>
 
+<div id="drawer-overlay"></div>
+<div id="drawer">
+  <div id="drawer-header">
+    <h2>How WebRouter works</h2>
+    <button id="drawer-close">Close</button>
+  </div>
+  <div id="drawer-content">
+    <div class="drawer-section">
+      <h3>The process</h3>
+      <div class="process-steps">
+        <div class="process-step" data-step="input">
+          <div class="num">1</div>
+          <div class="desc">You ask in the chat</div>
+        </div>
+        <div class="process-step" data-step="agent">
+          <div class="num">2</div>
+          <div class="desc">The Vercel AI SDK agent decides to call a tool</div>
+        </div>
+        <div class="process-step" data-step="tools">
+          <div class="num">3</div>
+          <div class="desc">WebRouter exposes two tools, <code>web_search</code> and <code>web_extract</code>, as ordinary <code>@ai.tool</code> functions (<code>build_tools(WebRouter())</code>). No fork of the SDK.</div>
+        </div>
+        <div class="process-step" data-step="provider">
+          <div class="num">4</div>
+          <div class="desc">A provider adapter runs the call (nimble, tavily, or exa). Same call shape, providers behind adapters.</div>
+        </div>
+        <div class="process-step" data-step="result">
+          <div class="num">5</div>
+          <div class="desc">The result comes back on the tool card, including which provider served it</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="drawer-section">
+      <p style="color:var(--zinc);font-size:12px;line-height:1.6;">
+        <strong>Today is that direct path only.</strong> This preview does not include intelligent routing, a gateway, MCP, research/browse modes, or a public package launch.
+      </p>
+    </div>
+
+    <div class="drawer-section">
+      <h3>Open-source example</h3>
+      <p>This playground is the open-source example. The code lives in:</p>
+      <a href="https://github.com/wildcard/web-router-playground" target="_blank" rel="noopener" class="repo-link">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+        </svg>
+        wildcard/web-router-playground
+      </a>
+      <p style="margin-top:12px;font-size:12px;color:var(--zinc-dim);">
+        The Vercel AI SDK example lives at <code>examples/vercel-ai-sdk</code>
+      </p>
+    </div>
+  </div>
+</div>
+
 <script>
 const log = document.getElementById('log');
 const form = document.getElementById('form');
@@ -490,6 +714,11 @@ const harnessStatus = document.getElementById('harness-status');
 const harnessSave = document.getElementById('harness-save');
 const harnessReset = document.getElementById('harness-reset');
 const harnessMsg = document.getElementById('harness-msg');
+
+const drawerOverlay = document.getElementById('drawer-overlay');
+const drawer = document.getElementById('drawer');
+const drawerToggle = document.getElementById('drawer-toggle');
+const drawerClose = document.getElementById('drawer-close');
 
 const SUGGESTIONS = [
   {
@@ -697,6 +926,32 @@ harnessReset.addEventListener('click', async () => {
 loadProviders();
 renderEmpty();
 
+drawerToggle.addEventListener('click', () => {
+  drawerOverlay.classList.add('open');
+  drawer.classList.add('open');
+  clearProcessSteps();
+});
+
+drawerClose.addEventListener('click', () => {
+  drawerOverlay.classList.remove('open');
+  drawer.classList.remove('open');
+});
+
+drawerOverlay.addEventListener('click', () => {
+  drawerOverlay.classList.remove('open');
+  drawer.classList.remove('open');
+});
+
+function clearProcessSteps() {
+  document.querySelectorAll('.process-step').forEach(s => s.classList.remove('active'));
+}
+
+function highlightStep(step) {
+  clearProcessSteps();
+  const stepEl = document.querySelector(`.process-step[data-step="${step}"]`);
+  if (stepEl) stepEl.classList.add('active');
+}
+
 function addMessage(role, text) {
   const msg = document.createElement('div');
   msg.className = 'msg ' + role;
@@ -727,6 +982,8 @@ form.addEventListener('submit', async (e) => {
   sendBtn.disabled = true;
   clearEmpty();
 
+  highlightStep('input');
+
   chatHistory.push({ role: 'user', content: message });
   addMessage('user', message);
   const assistantBody = addMessage('assistant', '');
@@ -745,6 +1002,8 @@ form.addEventListener('submit', async (e) => {
     // Ignore - will use server default
   }
 
+  highlightStep('agent');
+
   const res = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -760,6 +1019,7 @@ form.addEventListener('submit', async (e) => {
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buf = '';
+  let hasToolCall = false;
 
   while (true) {
     const { done, value } = await reader.read();
@@ -778,6 +1038,10 @@ form.addEventListener('submit', async (e) => {
       const payload = JSON.parse(data);
 
       if (event === 'tool_start') {
+        if (!hasToolCall) {
+          highlightStep('tools');
+          hasToolCall = true;
+        }
         const card = addToolCard(payload.name);
         toolCards[payload.call_id] = card;
         assistantBody.appendChild(card);
@@ -786,6 +1050,7 @@ form.addEventListener('submit', async (e) => {
         const card = toolCards[payload.call_id];
         if (card) card.querySelector('.args').textContent = payload.args;
       } else if (event === 'tool_result') {
+        highlightStep('provider');
         const card = toolCards[payload.call_id];
         if (card) {
           card.classList.add('done');
@@ -794,6 +1059,7 @@ form.addEventListener('submit', async (e) => {
         }
       } else if (event === 'text_delta') {
         if (!textBuf) {
+          highlightStep('result');
           const p = document.createElement('div');
           p.style.marginTop = '10px';
           assistantBody.appendChild(p);
@@ -819,6 +1085,7 @@ form.addEventListener('submit', async (e) => {
       content: '(no assistant text this turn — try again or rephrase)',
     });
   }
+  clearProcessSteps();
   sendBtn.disabled = false;
   input.focus();
 });
